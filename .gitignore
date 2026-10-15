@@ -1,0 +1,28 @@
+
+# Compiled object files
+*.o
+
+# Compiled executables
+*.exe
+
+# Temporary check binaries
+*_check
+localizer_check
+
+# Temporary test programs
+pipeline_test.cpp
+proof_test.cpp
+sha256_test.cpp
+tamper_test.cpp
+tree_test.cpp
+tree_pipeline_test.cpp
+tamper_pipeline_test.cpp
+localization_report_test.cpp
+verification_test.cpp
+
+# Generated test reports and baseline
+tamper_report.txt
+trusted_baseline.txt
+
+# Backup patch
+local-changes-backup.patch
