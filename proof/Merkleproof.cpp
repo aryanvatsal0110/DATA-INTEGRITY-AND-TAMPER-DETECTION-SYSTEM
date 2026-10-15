@@ -1,167 +1,136 @@
-#include "MerkleProof.h"
 
+#include "Merkleproof.h"
 #include "../hashing/SHA256.h"
 
-#include <iostream>
+#include <string>
+#include <vector>
 
 using namespace std;
 
+// Calculate the root hash using the SAME midpoint-splitting
+// structure as BinaryMerkleTree::buildTree().
+static string calculateSubtreeHash(
+    const vector<string>& leafHashes,
+    int start,
+    int end)
+{
+    if (start == end)
+        return leafHashes[start];
 
-// ========================================================
-// GENERATE MERKLE PROOF
-// ========================================================
+    int middle = start + (end - start) / 2;
+
+    string leftHash =
+        calculateSubtreeHash(leafHashes, start, middle);
+
+    string rightHash =
+        calculateSubtreeHash(leafHashes, middle + 1, end);
+
+    return generateSHA256(leftHash + rightHash);
+}
+
+// Generate a proof by following the same recursive tree structure.
+static bool buildProofSteps(
+    const vector<string>& leafHashes,
+    int start,
+    int end,
+    int targetIndex,
+    vector<ProofStep>& steps)
+{
+    if (start == end)
+        return start == targetIndex;
+
+    int middle = start + (end - start) / 2;
+
+    if (targetIndex <= middle)
+    {
+        // Target is in the left subtree.
+        if (!buildProofSteps(
+                leafHashes, start, middle,
+                targetIndex, steps))
+            return false;
+
+        ProofStep step;
+        step.siblingHash =
+            calculateSubtreeHash(
+                leafHashes, middle + 1, end);
+
+        step.siblingOnLeft = false;
+        steps.push_back(step);
+    }
+    else
+    {
+        // Target is in the right subtree.
+        if (!buildProofSteps(
+                leafHashes, middle + 1, end,
+                targetIndex, steps))
+            return false;
+
+        ProofStep step;
+        step.siblingHash =
+            calculateSubtreeHash(
+                leafHashes, start, middle);
+
+        step.siblingOnLeft = true;
+        steps.push_back(step);
+    }
+
+    return true;
+}
 
 MerkleProof generateMerkleProof(
     const vector<string>& leafHashes,
     int targetIndex)
 {
     MerkleProof proof;
+    proof.blockID = -1;
 
-    proof.blockID = targetIndex;
-
-    proof.leafHash =
-        leafHashes[targetIndex];
-
-
-    vector<string> currentLevel =
-        leafHashes;
-
-    int currentIndex =
-        targetIndex;
-
-
-    // ----------------------------------------------------
-    // Continue until only root remains
-    // ----------------------------------------------------
-
-    while (currentLevel.size() > 1)
+    if (leafHashes.empty() ||
+        targetIndex < 0 ||
+        targetIndex >= static_cast<int>(leafHashes.size()))
     {
-        vector<string> nextLevel;
-
-
-        // -----------------------------------------------
-        // Find sibling
-        // -----------------------------------------------
-
-        int siblingIndex;
-
-        if (currentIndex % 2 == 0)
-        {
-            // Current node is LEFT child
-
-            siblingIndex =
-                currentIndex + 1;
-
-            if (siblingIndex <
-                currentLevel.size())
-            {
-                ProofStep step;
-
-                step.siblingHash =
-                    currentLevel[siblingIndex];
-
-                step.siblingOnLeft = false;
-
-                proof.steps.push_back(step);
-            }
-        }
-        else
-        {
-            // Current node is RIGHT child
-
-            siblingIndex =
-                currentIndex - 1;
-
-            ProofStep step;
-
-            step.siblingHash =
-                currentLevel[siblingIndex];
-
-            step.siblingOnLeft = true;
-
-            proof.steps.push_back(step);
-        }
-
-
-        // -----------------------------------------------
-        // Build next level
-        // -----------------------------------------------
-
-        for (int i = 0;
-             i < currentLevel.size();
-             i += 2)
-        {
-            string left =
-                currentLevel[i];
-
-            string right;
-
-
-            if (i + 1 <
-                currentLevel.size())
-            {
-                right =
-                    currentLevel[i + 1];
-            }
-            else
-            {
-                // Duplicate last node
-                right = left;
-            }
-
-
-            string parent =
-                generateSHA256(
-                    left + right
-                );
-
-            nextLevel.push_back(parent);
-        }
-
-
-        currentIndex /= 2;
-
-        currentLevel =
-            nextLevel;
+        return proof;
     }
 
+    proof.blockID = targetIndex;
+    proof.leafHash = leafHashes[targetIndex];
+
+    if (!buildProofSteps(
+            leafHashes,
+            0,
+            static_cast<int>(leafHashes.size()) - 1,
+            targetIndex,
+            proof.steps))
+    {
+        proof.blockID = -1;
+        proof.steps.clear();
+    }
 
     return proof;
 }
 
-
-// ========================================================
-// REGENERATE ROOT
-// ========================================================
-
-string regenerateRoot(
-    const MerkleProof& proof)
+string regenerateRoot(const MerkleProof& proof)
 {
-    string currentHash =
-        proof.leafHash;
+    if (proof.blockID < 0 || proof.leafHash.empty())
+        return "";
 
+    string currentHash = proof.leafHash;
 
-    for (const ProofStep& step :
-         proof.steps)
+    for (const ProofStep& step : proof.steps)
     {
+        if (step.siblingHash.empty())
+            return "";
+
         if (step.siblingOnLeft)
         {
             currentHash =
-                generateSHA256(
-                    step.siblingHash +
-                    currentHash
-                );
+                generateSHA256(step.siblingHash + currentHash);
         }
         else
         {
             currentHash =
-                generateSHA256(
-                    currentHash +
-                    step.siblingHash
-                );
+                generateSHA256(currentHash + step.siblingHash);
         }
     }
-
 
     return currentHash;
 }
