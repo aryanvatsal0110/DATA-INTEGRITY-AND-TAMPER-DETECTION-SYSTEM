@@ -1,3 +1,17 @@
+# Generated binary integrity data
+binary_baseline_*.txt
+binary_report_*.txt
+binary_*_baseline.txt
+binary_trusted_*.txt
+binary_tamper_report.txt
+tamper_report.txt
+
+# Local test documents
+data/Authentication*.pdf
+data/testing.docx
+
+# Compiled executable
+integrity_system.exe
 
 # Compiled object files
 *.o
