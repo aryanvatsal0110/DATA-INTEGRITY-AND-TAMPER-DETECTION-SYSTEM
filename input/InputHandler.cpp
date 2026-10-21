@@ -21,12 +21,9 @@ std::vector<std::string> readDataset(const std::string& filename)
     std::string line;
 
     while (std::getline(file, line))
-    {
-        if (!line.empty())
-        {
-            records.push_back(line);
-        }
-    }
+{
+    records.push_back(line);
+}
 
     return records;
 }
