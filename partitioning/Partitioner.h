@@ -7,8 +7,6 @@
 
 #include "../tree/Block.h"
 #include "../profiling/DataProfiler.h"
-
-// Divide dataset records into blocks using the data profile.
 std::vector<Block> adaptivePartition(
     const std::vector<std::string>& records,
     const DataProfile& profile
