@@ -15,10 +15,6 @@ std::vector<Block> adaptivePartition(
 
     if (records.empty())
         return blocks;
-
-    // Simple record-count-based block-size policy.
-    // These thresholds are initial POC heuristics, not
-    // experimentally optimized values.
     int blockSize;
 
     if (profile.recordCount <= 100)
