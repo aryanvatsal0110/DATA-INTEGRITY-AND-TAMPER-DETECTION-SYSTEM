@@ -1,0 +1,12 @@
+Record 1: Alice
+Record 2: Bob
+Record 3: Charlie
+Record 4: Diana
+Record 5: Ethan
+Record 6: Fatima
+Record 7: George
+Record 8: Hannah
+Record 9: Ivan
+Record 10: Julia
+Record 11: Karan
+Record 12: Lina

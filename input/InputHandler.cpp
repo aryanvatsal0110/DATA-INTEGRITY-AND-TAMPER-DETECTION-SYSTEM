@@ -1,10 +1,13 @@
+
 #include "InputHandler.h"
+
 #include <fstream>
 #include <iostream>
 // Function to read records from a dataset file.
 // filename specifies the name or path of the file.
 // Returns a vector containing all non-empty lines.
 
+// Existing text-based input function
 std::vector<std::string> readDataset(const std::string& filename)
 {
     // Create an empty vector to store the dataset records.
@@ -28,6 +31,19 @@ std::vector<std::string> readDataset(const std::string& filename)
     std::string line;
 // Read the file line by line until the end of the file.
     while (std::getline(file, line))
+{
+    records.push_back(line);
+}
+
+    return records;
+}
+
+// New binary-safe input function
+std::vector<std::uint8_t> readFileBytes(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::binary);
+
+    if (!file.is_open())
     {
         // Check whether the current line is not empty.
         if (!line.empty())

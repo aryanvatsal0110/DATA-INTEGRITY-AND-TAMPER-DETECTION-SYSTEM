@@ -1,0 +1,42 @@
+# Generated binary integrity data
+binary_baseline_*.txt
+binary_report_*.txt
+binary_*_baseline.txt
+binary_trusted_*.txt
+binary_tamper_report.txt
+tamper_report.txt
+
+# Local test documents
+data/Authentication*.pdf
+data/testing.docx
+
+# Compiled executable
+integrity_system.exe
+
+# Compiled object files
+*.o
+
+# Compiled executables
+*.exe
+
+# Temporary check binaries
+*_check
+localizer_check
+
+# Temporary test programs
+pipeline_test.cpp
+proof_test.cpp
+sha256_test.cpp
+tamper_test.cpp
+tree_test.cpp
+tree_pipeline_test.cpp
+tamper_pipeline_test.cpp
+localization_report_test.cpp
+verification_test.cpp
+
+# Generated test reports and baseline
+tamper_report.txt
+trusted_baseline.txt
+
+# Backup patch
+local-changes-backup.patch
