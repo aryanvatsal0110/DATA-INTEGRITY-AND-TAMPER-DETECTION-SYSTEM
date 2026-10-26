@@ -1,6 +1,9 @@
 #include "InputHandler.h"
 #include <fstream>
 #include <iostream>
+// Function to read records from a dataset file.
+// filename specifies the name or path of the file.
+// Returns a vector containing all non-empty lines.
 
 std::vector<std::string> readDataset(const std::string& filename)
 {
