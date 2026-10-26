@@ -24,9 +24,9 @@ std::vector<std::string> readDataset(const std::string& filename)
 // Return the empty vector because no records were read.
         return records;
     }
-
+// Declare a string variable to store each line of the file.
     std::string line;
-
+// Read the file line by line until the end of the file.
     while (std::getline(file, line))
     {
         if (!line.empty())
