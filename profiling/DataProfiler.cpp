@@ -13,9 +13,9 @@ DataProfile profileDataset(
 
     profile.fileName = filename;
 
-    // -----------------------------
-    // Determine file type
-    // -----------------------------
+    // ----------------------------------
+    //  Here we are determining file type
+    // -----------------------------------
 
     size_t position = filename.find_last_of('.');
 
