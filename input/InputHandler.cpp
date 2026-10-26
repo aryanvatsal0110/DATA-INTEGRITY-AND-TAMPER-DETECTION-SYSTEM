@@ -29,8 +29,10 @@ std::vector<std::string> readDataset(const std::string& filename)
 // Read the file line by line until the end of the file.
     while (std::getline(file, line))
     {
+        // Check whether the current line is not empty.
         if (!line.empty())
         {
+             // Add the non-empty line to the records vector.
             records.push_back(line);
         }
     }
