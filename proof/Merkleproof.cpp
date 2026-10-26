@@ -7,7 +7,7 @@
 
 using namespace std;
 
-// Calculate the root hash using the SAME midpoint-splitting
+// Calculating the root hash using the SAME mdpt-splitting
 // structure as BinaryMerkleTree::buildTree().
 static string calculateSubtreeHash(
     const vector<string>& leafHashes,
@@ -28,7 +28,7 @@ static string calculateSubtreeHash(
     return generateSHA256(leftHash + rightHash);
 }
 
-// Generate a proof by following the same recursive tree structure.
+// Generating a proof by following the same recursive tree structure.
 static bool buildProofSteps(
     const vector<string>& leafHashes,
     int start,
