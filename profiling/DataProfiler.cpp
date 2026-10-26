@@ -80,7 +80,7 @@ DataProfile profileDataset(
 
 void displayProfile(const DataProfile& profile)
 {
-    cout << "\n=========== DATA PROFILE ===========\n";
+    cout << "\n========== DATA PROFILE ==========\n";
 
     cout << "File Name           : "
          << profile.fileName << endl;
