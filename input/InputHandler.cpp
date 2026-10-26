@@ -38,6 +38,6 @@ std::vector<std::string> readDataset(const std::string& filename)
     }
 
     file.close();
-
+ // Return the vector containing all non-empty records.
     return records;
 }
