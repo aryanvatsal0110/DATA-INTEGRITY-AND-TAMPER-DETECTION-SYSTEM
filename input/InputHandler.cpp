@@ -7,9 +7,14 @@
 
 std::vector<std::string> readDataset(const std::string& filename)
 {
+    // Create an empty vector to store the dataset records.
     std::vector<std::string> records;
+    
+    // Open the specified file in read mode.
 
     std::ifstream file(filename);
+
+      // Check whether the file was opened successfully.
 
     if (!file.is_open())
     {
