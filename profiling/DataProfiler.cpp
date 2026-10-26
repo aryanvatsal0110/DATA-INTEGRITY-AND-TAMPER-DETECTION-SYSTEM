@@ -30,7 +30,7 @@ DataProfile profileDataset(
     }
 
     // -----------------------------
-    // Determine file size
+    // Determining file size
     // -----------------------------
 
     ifstream file(filename, ios::binary | ios::ate);
