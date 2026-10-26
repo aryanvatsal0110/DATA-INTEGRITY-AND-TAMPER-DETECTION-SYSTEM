@@ -18,9 +18,10 @@ std::vector<std::string> readDataset(const std::string& filename)
 
     if (!file.is_open())
     {
+          // Check whether the file was opened successfully.
         std::cerr << "Error: Cannot open dataset: "
                   << filename << std::endl;
-
+// Return the empty vector because no records were read.
         return records;
     }
 
