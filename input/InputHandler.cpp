@@ -3,23 +3,33 @@
 
 #include <fstream>
 #include <iostream>
-#include <iterator>
+// Function to read records from a dataset file.
+// filename specifies the name or path of the file.
+// Returns a vector containing all non-empty lines.
 
 // Existing text-based input function
 std::vector<std::string> readDataset(const std::string& filename)
 {
+    // Create an empty vector to store the dataset records.
     std::vector<std::string> records;
+    
+    // Open the specified file in read mode.
+
     std::ifstream file(filename);
+
+      // Check whether the file was opened successfully.
 
     if (!file.is_open())
     {
+          // Check whether the file was opened successfully.
         std::cerr << "Error: Cannot open dataset: "
                   << filename << std::endl;
+// Return the empty vector because no records were read.
         return records;
     }
-
+// Declare a string variable to store each line of the file.
     std::string line;
-
+// Read the file line by line until the end of the file.
     while (std::getline(file, line))
 {
     records.push_back(line);
@@ -35,13 +45,15 @@ std::vector<std::uint8_t> readFileBytes(const std::string& filename)
 
     if (!file.is_open())
     {
-        std::cerr << "Error: Cannot open file: "
-                  << filename << std::endl;
-        return {};
+        // Check whether the current line is not empty.
+        if (!line.empty())
+        {
+             // Add the non-empty line to the records vector.
+            records.push_back(line);
+        }
     }
 
-    return std::vector<std::uint8_t>(
-        std::istreambuf_iterator<char>(file),
-        std::istreambuf_iterator<char>()
-    );
+    file.close();
+ // Return the vector containing all non-empty records.
+    return records;
 }
