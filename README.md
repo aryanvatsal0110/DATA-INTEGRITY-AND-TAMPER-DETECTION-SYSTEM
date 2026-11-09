@@ -158,13 +158,16 @@ Actual results should be documented after executing and validating these tests.
 
 The project is being developed using a modular approach.
 
-- Input handling and data profiling.
+- Input handling
+- Data profiling.
 - Adaptive data partitioning.
 - SHA-256 hashing.
 - Merkle Tree construction
-- proof verification.
-- Tamper localization and report generation.
-- End-to-end integration and performance evaluation.
+- Proof verification.
+- Tamper localization
+- Report generation.
+- End-to-end integration
+- Performance evaluation.
 
 The implementation status of each module should be updated according to its actual development and testing progress.
 
