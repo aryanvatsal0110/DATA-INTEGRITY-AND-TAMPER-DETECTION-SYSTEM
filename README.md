@@ -201,7 +201,7 @@ The implementation status of each module should be updated according to its actu
 
 ### Collaborative Development
 
-All team members contribute to modular development, testing, integration, documentation, and version control through GitHub.
+All team members actively participate in modular development, testing, integration, documentation, and version control using GitHub.
 
 ## Conclusion
 
