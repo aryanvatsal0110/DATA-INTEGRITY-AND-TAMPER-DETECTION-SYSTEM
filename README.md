@@ -161,7 +161,8 @@ The project is being developed using a modular approach.
 - Input handling and data profiling.
 - Adaptive data partitioning.
 - SHA-256 hashing.
-- Merkle Tree construction and proof verification.
+- Merkle Tree construction
+- proof verification.
 - Tamper localization and report generation.
 - End-to-end integration and performance evaluation.
 
