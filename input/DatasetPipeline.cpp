@@ -1,22 +1,18 @@
 
 #include "DatasetPipeline.h"
-
 #include "InputHandler.h"
 #include "../partitioning/Partitioner.h"
-
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
 DatasetPipelineResult prepareDataset(
     const std::string& filename)
 {
     DatasetPipelineResult result;
-
+    
     // 1. Read the real dataset.
     result.records = readDataset(filename);
-
     if (result.records.empty())
     {
         throw std::runtime_error(
@@ -39,6 +35,5 @@ DatasetPipelineResult prepareDataset(
     // 4. Display the processing summary.
     displayProfile(result.profile);
     displayBlocks(result.blocks);
-
     return result;
 }
