@@ -1,24 +1,16 @@
 #include "DataProfiler.h"
-
 #include <iostream>
 #include <fstream>
-
 using namespace std;
-
 DataProfile profileDataset(
     const string& filename,
     const vector<string>& records)
 {
     DataProfile profile;
-
     profile.fileName = filename;
-
-    // ----------------------------------
+    
     //  Here we are determining file type
-    // -----------------------------------
-
     size_t position = filename.find_last_of('.');
-
     if (position != string::npos)
     {
         profile.fileType =
@@ -28,13 +20,9 @@ DataProfile profileDataset(
     {
         profile.fileType = "Unknown";
     }
-
-    // -----------------------------
+    
     // Determining file size
-    // -----------------------------
-
     ifstream file(filename, ios::binary | ios::ate);
-
     if (file.is_open())
     {
         profile.fileSize = file.tellg();
@@ -45,16 +33,10 @@ DataProfile profileDataset(
         profile.fileSize = 0;
     }
 
-    // -----------------------------
     // Number of records
-    // -----------------------------
-
     profile.recordCount =
         records.size();
-
-    // -----------------------------
     // Average record size
-    // -----------------------------
 
     if (profile.recordCount > 0)
     {
