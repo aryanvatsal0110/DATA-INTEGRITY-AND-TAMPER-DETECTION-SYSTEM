@@ -5,7 +5,10 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> hashByteBlocks(
+// Generates SHA-256 hashes for each binary block.
+// Preserves all bytes, including null bytes, during hashing.
+// Returns a vector containing the hash of each block.
+    std::vector<std::string> hashByteBlocks(
     const std::vector<std::vector<std::uint8_t>>& blocks)
 {
     std::vector<std::string> hashes;
