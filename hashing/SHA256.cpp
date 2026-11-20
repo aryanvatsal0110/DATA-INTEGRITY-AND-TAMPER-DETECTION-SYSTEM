@@ -8,6 +8,7 @@
 
 namespace
 {
+// Constant values used in the 64 SHA-256 processing rounds.
     constexpr std::uint32_t K[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
         0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -26,16 +27,16 @@ namespace
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
         0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     };
-
+//Performs a right rotation on a 32-bit unsigned integer.
     constexpr std::uint32_t rotr(std::uint32_t x, unsigned n)
     {
         return (x >> n) | (x << (32 - n));
     }
-
+//Processes a single 512-bit block and updates the hash state.
     void processBlock(const std::uint8_t* block, std::uint32_t state[8])
     {
         std::uint32_t w[64];
-
+// Converts the input block into sixteen 32-bit words.
         for (int i = 0; i < 16; ++i) {
             const int j = i * 4;
             w[i] = (static_cast<std::uint32_t>(block[j]) << 24) |
@@ -43,7 +44,7 @@ namespace
                    (static_cast<std::uint32_t>(block[j + 2]) << 8) |
                    static_cast<std::uint32_t>(block[j + 3]);
         }
-
+// Expands the message schedule from 16 words to 64 words.
         for (int i = 16; i < 64; ++i) {
             const std::uint32_t s0 =
                 rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^
@@ -59,7 +60,7 @@ namespace
         std::uint32_t c = state[2], d = state[3];
         std::uint32_t e = state[4], f = state[5];
         std::uint32_t g = state[6], h = state[7];
-
+// Performs the main SHA-256 compression operations.
         for (int i = 0; i < 64; ++i) {
             const std::uint32_t S1 =
                 rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
@@ -87,7 +88,7 @@ namespace
         state[6] += g; state[7] += h;
     }
 }
-
+// Generates a SHA-256 hexadecimal hash for the given input data.
 std::string generateSHA256(const std::string& data)
 {
     std::uint32_t state[8] = {
@@ -98,7 +99,7 @@ std::string generateSHA256(const std::string& data)
     std::vector<std::uint8_t> message(data.begin(), data.end());
     const std::uint64_t bitLength =
         static_cast<std::uint64_t>(message.size()) * 8;
-
+// Adds the initial padding bit required by the SHA-256 algorithm.
     message.push_back(0x80);
     while ((message.size() % 64) != 56) {
         message.push_back(0);
@@ -108,14 +109,15 @@ std::string generateSHA256(const std::string& data)
         message.push_back(
             static_cast<std::uint8_t>((bitLength >> (i * 8)) & 0xff));
     }
-
+// Processes the padded message in consecutive 512-bit blocks.
     for (std::size_t offset = 0; offset < message.size(); offset += 64) {
         processBlock(message.data() + offset, state);
     }
 
     std::ostringstream output;
     output << std::hex << std::setfill('0');
-
+    
+// Converts the final hash state into a hexadecimal string.
     for (std::uint32_t word : state) {
         output << std::setw(8) << word;
     }
