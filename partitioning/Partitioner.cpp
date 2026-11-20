@@ -23,7 +23,9 @@ std::vector<Block> adaptivePartition(
         blockSize = 50;
     else
         blockSize = 100;
-
+// Reserve memory for the expected number of blocks.
+blocks.reserve(1 + (records.size() - 1) /
+               static_cast<std::size_t>(blockSize));
     int blockID = 0;
 
     for (std::size_t start = 0;
