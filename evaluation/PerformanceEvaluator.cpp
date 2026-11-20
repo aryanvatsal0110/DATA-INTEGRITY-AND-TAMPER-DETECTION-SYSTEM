@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <iomanip>
-
+// Displays the performance evaluation results.
+// Shows dataset size, record count, and processing time.
+// Formats processing time up to three decimal places.
 void displayPerformance(const PerformanceResult& result)
 {
     std::cout << "\n--- Performance Evaluation ---\n";
