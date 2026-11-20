@@ -25,10 +25,7 @@ std::vector<int> locateTamperedBlocks(
 
         for (const std::string& record : blocks[i].records)
         {
-            /* // Length-prefix records to avoid ambiguous concatenation.
-            combinedData += std::to_string(record.size());
-            combinedData += ':';
-            combinedData += record; */
+         
             combinedData += record;
         }
 
