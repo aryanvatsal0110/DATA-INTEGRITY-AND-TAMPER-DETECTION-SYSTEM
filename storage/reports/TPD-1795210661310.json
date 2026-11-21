@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "report_id": "TPD-1795210661310",
+  "generated_at": "2026-11-21 03:07:41.310",
+  "files": {
+    "original": {
+      "name": "TPD-1795210661226.txt",
+      "size_bytes": 6800
+    },
+    "current": {
+      "name": "integration_modified.txt",
+      "size_bytes": 6600
+    }
+  },
+  "integrity": {
+    "status": "TAMPERED",
+    "original_merkle_root": "5c981fc3a2664d9fe840b4fee0e249f5172440e15f5a935e4875fb039724f639",
+    "current_merkle_root": "7a57b1b2ba0267f5115529320a1380d8d630e9a5a2b3f61232c1ea68d0d1f5a7",
+    "block_size": 4096,
+    "original_block_count": 2,
+    "current_block_count": 2
+  },
+  "block_changes": {
+    "modified_count": 2,
+    "added_count": 0,
+    "removed_count": 0,
+    "details": [
+      {
+        "block_index": 0,
+        "change_type": "MODIFIED",
+        "start_byte": 0,
+        "original_size": 4096,
+        "current_size": 4096
+      },
+      {
+        "block_index": 1,
+        "change_type": "MODIFIED",
+        "start_byte": 4096,
+        "original_size": 2704,
+        "current_size": 2504
+      }
+    ]
+  },
+  "text_comparison": {
+    "available": true,
+    "original_line_count": 200,
+    "current_line_count": 200,
+    "changes": [
+      {
+        "change_type": "REMOVED",
+        "original_line": 1,
+        "current_line": 0,
+        "original_text": "TemperD verifies file integrity.",
+        "current_text": "",
+        "removed_words": [],
+        "added_words": []
+      },
+      {
+        "change_type": "ADDED",
+        "original_line": 0,
+        "current_line": 4,
+        "original_text": "",
+        "current_text": "TXmperD verifies file integrity.",
+        "removed_words": [],
+        "added_words": []
+      }
+    ]
+  }
+}

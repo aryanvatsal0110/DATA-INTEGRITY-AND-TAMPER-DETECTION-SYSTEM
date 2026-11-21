@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "report_id": "TPD-1795210661263",
+  "generated_at": "2026-11-21 03:07:41.263",
+  "files": {
+    "original": {
+      "name": "TPD-1795210661226.txt",
+      "size_bytes": 6800
+    },
+    "current": {
+      "name": "integration_original.txt",
+      "size_bytes": 6800
+    }
+  },
+  "integrity": {
+    "status": "VERIFIED",
+    "original_merkle_root": "5c981fc3a2664d9fe840b4fee0e249f5172440e15f5a935e4875fb039724f639",
+    "current_merkle_root": "5c981fc3a2664d9fe840b4fee0e249f5172440e15f5a935e4875fb039724f639",
+    "block_size": 4096,
+    "original_block_count": 2,
+    "current_block_count": 2
+  },
+  "block_changes": {
+    "modified_count": 0,
+    "added_count": 0,
+    "removed_count": 0,
+    "details": [
+    ]
+  },
+  "text_comparison": {
+    "available": true,
+    "original_line_count": 200,
+    "current_line_count": 200,
+    "changes": [
+    ]
+  }
+}

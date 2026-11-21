@@ -1,0 +1,8 @@
+
+{
+    "liveServer.settings.ignoreFiles": [
+        "**/storage/**",
+        "**/*.exe",
+        "**/*.o"
+    ]
+}

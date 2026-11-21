@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "report_id": "TPD-1795210380084",
+  "generated_at": "2026-11-21 03:03:00.084",
+  "files": {
+    "original": {
+      "name": "document.txt",
+      "size_bytes": 9000
+    },
+    "current": {
+      "name": "modified_document.txt",
+      "size_bytes": 61
+    }
+  },
+  "integrity": {
+    "status": "TAMPERED",
+    "original_merkle_root": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "current_merkle_root": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "block_size": 4096,
+    "original_block_count": 3,
+    "current_block_count": 3
+  },
+  "block_changes": {
+    "modified_count": 1,
+    "added_count": 0,
+    "removed_count": 0,
+    "details": [
+      {
+        "block_index": 1,
+        "change_type": "MODIFIED",
+        "start_byte": 4096,
+        "original_size": 4096,
+        "current_size": 4096
+      }
+    ]
+  },
+  "text_comparison": {
+    "available": true,
+    "original_line_count": 2,
+    "current_line_count": 2,
+    "changes": [
+      {
+        "change_type": "MODIFIED",
+        "original_line": 1,
+        "current_line": 1,
+        "original_text": "TemperD is an integrity system.",
+        "current_text": "TemperD is a security system.",
+        "removed_words": ["an", "integrity"],
+        "added_words": ["a", "security"]
+      }
+    ]
+  }
+}

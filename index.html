@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TemperD | File Integrity System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">T</div>
+            <div>
+                <h2>TemperD</h2>
+                <p>File Security System</p>
+            </div>
+        </div>
+
+        <p class="menu-heading">MAIN MENU</p>
+
+        <nav>
+            <button class="nav-link active" data-page="dashboard">
+                <span>▦</span> Dashboard
+            </button>
+
+            <button class="nav-link" data-page="register">
+                <span>＋</span> Register File
+            </button>
+
+            <button class="nav-link" data-page="verify">
+                <span>✓</span> Verify File
+            </button>
+
+            <button class="nav-link" data-page="analysis">
+                <span>⌕</span> Tamper Analysis
+            </button>
+
+            <button class="nav-link" data-page="reports">
+                <span>▤</span> Reports
+            </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>System Ready</strong>
+                    <p>Frontend initialized</p>
+                </div>
+            </div>
+            <p class="version">TemperD v1.0</p>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">TemperD / <span id="breadcrumb">Dashboard</span></p>
+                <h2 id="page-heading">Dashboard</h2>
+            </div>
+
+            <div class="profile">
+                <div class="profile-avatar">T</div>
+                <span>Administrator</span>
+            </div>
+        </header>
+
+
+        <!-- DASHBOARD -->
+        <section class="page active" id="dashboard">
+
+            <div class="welcome">
+                <div>
+                    <h1>Welcome to TemperD</h1>
+                    <p>Monitor file integrity and detect unauthorized modifications.</p>
+                </div>
+                <div class="welcome-icon">🛡️</div>
+            </div>
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon blue">▤</div>
+                    <p>Registered Files</p>
+                    <h2 id="registered-count">0</h2>
+                    <span>Files in baseline storage</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <p>Authentic Files</p>
+                    <h2 id="authentic-count">0</h2>
+                    <span>No tampering detected</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon red">!</div>
+                    <p>Tampered Files</p>
+                    <h2 id="tampered-count">0</h2>
+                    <span>Modifications detected</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon purple">⌕</div>
+                    <p>Total Verifications</p>
+                    <h2 id="verification-count">0</h2>
+                    <span>Verification operations</span>
+                </div>
+
+            </div>
+
+            <div class="content-grid">
+
+                <div class="panel quick-panel">
+                    <div class="panel-heading">
+                        <h3>Quick Actions</h3>
+                        <p>Choose what you want to do.</p>
+                    </div>
+
+                    <button class="action-card" data-go="register">
+                        <div class="action-icon blue">＋</div>
+                        <div>
+                            <h4>Register New File</h4>
+                            <p>Create an original integrity baseline.</p>
+                        </div>
+                        <span>→</span>
+                    </button>
+
+                    <button class="action-card" data-go="verify">
+                        <div class="action-icon purple">✓</div>
+                        <div>
+                            <h4>Verify Existing File</h4>
+                            <p>Check whether a file has been modified.</p>
+                        </div>
+                        <span>→</span>
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-heading">
+                        <h3>How TemperD Works</h3>
+                        <p>Our file authentication process.</p>
+                    </div>
+
+                    <div class="process-item">
+                        <span>01</span>
+                        <div><h4>File Profiling</h4><p>Extract file information.</p></div>
+                    </div>
+                    <div class="process-item">
+                        <span>02</span>
+                        <div><h4>SHA-256 Hashing</h4><p>Generate individual block hashes.</p></div>
+                    </div>
+                    <div class="process-item">
+                        <span>03</span>
+                        <div><h4>Merkle Tree</h4><p>Construct the authentication tree.</p></div>
+                    </div>
+                    <div class="process-item">
+                        <span>04</span>
+                        <div><h4>Integrity Verification</h4><p>Detect and localize changes.</p></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="panel recent-panel">
+                <div class="panel-heading">
+                    <h3>Recent Activity</h3>
+                    <p>Your latest file operations.</p>
+                </div>
+
+                <div class="empty-state" id="recent-empty">
+                    <span>▤</span>
+                    <h4>No activity yet</h4>
+                    <p>Register your first file to get started.</p>
+                </div>
+
+                <div id="recent-list"></div>
+            </div>
+
+        </section>
+
+
+        <!-- REGISTER FILE -->
+        <section class="page" id="register">
+
+            <div class="page-intro">
+                <h2>Register New File</h2>
+                <p>Create a secure original integrity baseline for your file.</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-heading">
+                    <h3>Upload Your File</h3>
+                    <p>Choose a file that you want to protect.</p>
+                </div>
+
+                <label class="upload-box" id="register-drop">
+                    <input type="file" id="register-input" hidden>
+                    <div class="upload-icon">↑</div>
+                    <h3>Drag and drop your file here</h3>
+                    <p>or <span>browse files</span> from your computer</p>
+                    <small>TXT, CSV, PDF, DOCX and other formats</small>
+                </label>
+
+                <div class="file-preview hidden" id="register-preview"></div>
+
+                <div class="button-row">
+                    <button class="btn btn-primary" id="register-button" disabled>
+                        Register File
+                    </button>
+                    <button class="btn btn-light" id="register-clear">Clear</button>
+                </div>
+
+                <p class="notice">Registration will create the original file integrity baseline once the C++ backend is connected.</p>
+
+            </div>
+
+        </section>
+
+
+        <!-- VERIFY FILE -->
+        <section class="page" id="verify">
+
+            <div class="page-intro">
+                <h2>Verify File Integrity</h2>
+                <p>Compare a file with its previously registered original version.</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-heading">
+                    <h3>Select File to Verify</h3>
+                    <p>Choose a registered file and upload its current version.</p>
+                </div>
+
+                <label class="field-label" for="baseline-select">
+                    Registered File
+                </label>
+
+                <select id="baseline-select" class="input-field">
+                    <option value="">No registered files available</option>
+                </select>
+
+                <label class="field-label">Upload Current File</label>
+
+                <label class="upload-box" id="verify-drop">
+                    <input type="file" id="verify-input" hidden>
+                    <div class="upload-icon">↑</div>
+                    <h3>Upload the current version</h3>
+                    <p>or <span>browse files</span></p>
+                    <small>Select the file you want to verify.</small>
+                </label>
+
+                <div class="file-preview hidden" id="verify-preview"></div>
+
+                <button class="btn btn-primary full-btn" id="verify-button" disabled>
+                    Verify Integrity
+                </button>
+
+                <p class="notice">The original baseline will never be overwritten during verification.</p>
+
+            </div>
+
+        </section>
+
+
+        <!-- TAMPER ANALYSIS -->
+        <section class="page" id="analysis">
+
+            <div class="page-intro">
+                <h2>Tamper Analysis</h2>
+                <p>Examine modified blocks, lines, words and CSV cells.</p>
+            </div>
+
+            <div class="panel empty-state" id="analysis-empty">
+                <span>⌕</span>
+                <h3>No analysis available</h3>
+                <p>Verify a file first to view its tamper analysis.</p>
+                <button class="btn btn-primary" data-go="verify">Verify a File</button>
+            </div>
+
+            <div id="analysis-results" class="hidden">
+
+                <div class="result-banner">
+                    <span>⚠</span>
+                    <div>
+                        <h3>Tampering Detected</h3>
+                        <p>Changes were identified in the uploaded file.</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <p>Total Blocks</p>
+                        <h2 id="analysis-total">0</h2>
+                    </div>
+                    <div class="stat-card">
+                        <p>Modified Blocks</p>
+                        <h2 id="analysis-modified">0</h2>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-heading">
+                        <h3>Content Comparison</h3>
+                        <p>Original and modified file contents.</p>
+                    </div>
+
+                    <div class="comparison-grid">
+                        <div>
+                            <h4>Original Content</h4>
+                            <pre id="original-content"></pre>
+                        </div>
+                        <div>
+                            <h4>Modified Content</h4>
+                            <pre id="modified-content"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-heading">
+                        <h3>Detected Changes</h3>
+                        <p>Exact differences identified by the comparison algorithm.</p>
+                    </div>
+                    <div id="changes-list"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- REPORTS -->
+        <section class="page" id="reports">
+
+            <div class="page-intro">
+                <h2>Reports</h2>
+                <p>View and download file registration and verification reports.</p>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3>File Activity Reports</h3>
+                    <p>All operations performed in TemperD.</p>
+                </div>
+
+                <div id="reports-list">
+                    <div class="empty-state">
+                        <span>▤</span>
+                        <h3>No reports available</h3>
+                        <p>Your generated reports will appear here.</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <footer>
+            TemperD © 2026 · Adaptive Merkle Tree-Based File Integrity System
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

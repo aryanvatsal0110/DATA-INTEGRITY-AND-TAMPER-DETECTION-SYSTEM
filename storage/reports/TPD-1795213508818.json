@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "report_id": "TPD-1795213508818",
+  "generated_at": "2026-11-21 03:55:08.818",
+  "files": {
+    "original": {
+      "name": "TPD-1795213477782.txt",
+      "size_bytes": 1643
+    },
+    "current": {
+      "name": "temp_1795213508704_17_txtTEST.txt",
+      "size_bytes": 1644
+    }
+  },
+  "integrity": {
+    "status": "TAMPERED",
+    "original_merkle_root": "091fc5b587bf1f8f26f34301478dc2a9272b1fc2e17f2f5a3ace62a77de9c752",
+    "current_merkle_root": "d9773289a1268cd975180da59fa9ff55774adb5191ae2e7a8c24077593fd4eda",
+    "block_size": 512,
+    "original_block_count": 4,
+    "current_block_count": 4
+  },
+  "block_changes": {
+    "modified_count": 2,
+    "added_count": 0,
+    "removed_count": 0,
+    "details": [
+      {
+        "block_index": 2,
+        "change_type": "MODIFIED",
+        "start_byte": 1024,
+        "original_size": 512,
+        "current_size": 512
+      },
+      {
+        "block_index": 3,
+        "change_type": "MODIFIED",
+        "start_byte": 1536,
+        "original_size": 107,
+        "current_size": 108
+      }
+    ]
+  },
+  "text_comparison": {
+    "available": true,
+    "original_line_count": 92,
+    "current_line_count": 92,
+    "changes": [
+      {
+        "change_type": "MODIFIED",
+        "original_line": 77,
+        "current_line": 77,
+        "original_text": "Name: Dev Patel",
+        "current_text": "Name: Dev Vatsal",
+        "removed_words": ["Patel"],
+        "added_words": ["Vatsal"]
+      }
+    ]
+  }
+}

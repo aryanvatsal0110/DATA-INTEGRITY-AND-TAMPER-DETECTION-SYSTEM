@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "report_id": "TPD-1795211428500",
+  "generated_at": "2026-11-21 03:20:28.500",
+  "files": {
+    "original": {
+      "name": "TPD-1795211261154.txt",
+      "size_bytes": 7400
+    },
+    "current": {
+      "name": "temp_1795211427955_2_verification_original.txt",
+      "size_bytes": 7400
+    }
+  },
+  "integrity": {
+    "status": "VERIFIED",
+    "original_merkle_root": "9b4259aa8808fb0db4e35d1c18465129c1ac13686ccef982e2f05aad84c654bd",
+    "current_merkle_root": "9b4259aa8808fb0db4e35d1c18465129c1ac13686ccef982e2f05aad84c654bd",
+    "block_size": 4096,
+    "original_block_count": 2,
+    "current_block_count": 2
+  },
+  "block_changes": {
+    "modified_count": 0,
+    "added_count": 0,
+    "removed_count": 0,
+    "details": [
+    ]
+  },
+  "text_comparison": {
+    "available": true,
+    "original_line_count": 200,
+    "current_line_count": 200,
+    "changes": [
+    ]
+  }
+}

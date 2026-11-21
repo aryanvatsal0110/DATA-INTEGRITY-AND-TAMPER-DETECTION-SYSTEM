@@ -1,0 +1,92 @@
+STUDENT ACADEMIC RECORDS
+========================================
+
+Roll No: 230101
+Name: Aarav Sharma
+Semester: 1
+CGPA: 8.75
+----------------------------------------
+
+Roll No: 230102
+Name: Ananya Verma
+Semester: 1
+CGPA: 9.12
+----------------------------------------
+
+Roll No: 230103
+Name: Rohan Gupta
+Semester: 2
+CGPA: 7.85
+----------------------------------------
+
+Roll No: 230104
+Name: Priya Singh
+Semester: 2
+CGPA: 9.45
+----------------------------------------
+
+Roll No: 230105
+Name: Karan Mehta
+Semester: 3
+CGPA: 8.20
+----------------------------------------
+
+Roll No: 230106
+Name: Sneha Kapoor
+Semester: 3
+CGPA: 9.01
+----------------------------------------
+
+Roll No: 230107
+Name: Aditya Mishra
+Semester: 4
+CGPA: 7.65
+----------------------------------------
+
+Roll No: 230108
+Name: Ishita Rao
+Semester: 4
+CGPA: 8.92
+----------------------------------------
+
+Roll No: 230109
+Name: Rahul Yadav
+Semester: 5
+CGPA: 8.35
+----------------------------------------
+
+Roll No: 230110
+Name: Neha Joshi
+Semester: 5
+CGPA: 9.30
+----------------------------------------
+
+Roll No: 230111
+Name: Arjun Malhotra
+Semester: 6
+CGPA: 7.95
+----------------------------------------
+
+Roll No: 230112
+Name: Kavya Nair
+Semester: 6
+CGPA: 9.65
+----------------------------------------
+
+Roll No: 230113
+Name: Dev Vatsal
+Semester: 7
+CGPA: 8.55
+----------------------------------------
+
+Roll No: 230114
+Name: Meera Gupta
+Semester: 7
+CGPA: 8.80
+----------------------------------------
+
+Roll No: 230115
+Name: Vikram Saini
+Semester: 8
+CGPA: 7.40
+----------------------------------------
