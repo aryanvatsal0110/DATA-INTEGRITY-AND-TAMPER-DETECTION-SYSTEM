@@ -169,7 +169,7 @@ namespace {
 }
 
 
-// Generate SHA-256 hash for one input string
+// Generating SHA-256 hash for one input string
 bool HashGenerator::generateHash(
     const std::string& data,
     std::string& hash
