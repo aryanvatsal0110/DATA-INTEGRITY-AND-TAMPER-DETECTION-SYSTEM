@@ -42,7 +42,7 @@ namespace {
         0x5be0cd19
     };
 
-    // Right rotation
+    // here we are doing Right rotation
     uint32_t rotateRight(uint32_t value, unsigned int bits) {
         return (value >> bits) | (value << (32 - bits));
     }
