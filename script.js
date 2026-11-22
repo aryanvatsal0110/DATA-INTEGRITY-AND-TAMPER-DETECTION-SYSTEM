@@ -23,6 +23,44 @@ let latestReportId =
 
 
 // ==========================================
+// DASHBOARD STATISTICS
+// ==========================================
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/stats`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load dashboard statistics.");
+        }
+
+        const stats = await response.json();
+
+        if (!stats.success) {
+            throw new Error(
+                stats.message || "Invalid statistics response."
+            );
+        }
+
+        document.getElementById("registered-count").textContent =
+            stats.registeredFiles ?? 0;
+
+        document.getElementById("authentic-count").textContent =
+            stats.authenticFiles ?? 0;
+
+        document.getElementById("tampered-count").textContent =
+            stats.tamperedFiles ?? 0;
+
+        document.getElementById("verification-count").textContent =
+            stats.totalVerifications ?? 0;
+
+    } catch (error) {
+        console.error("Dashboard statistics error:", error);
+    }
+}
+
+
+// ==========================================
 // 2. PAGE NAVIGATION
 // ==========================================
 
@@ -69,6 +107,10 @@ function showPage(pageId) {
 
     if (pageId === "reports") {
         displayLatestReport();
+    }
+
+    if (pageId === "dashboard") {
+        loadDashboardStats();
     }
 }
 
@@ -431,6 +473,7 @@ document.getElementById("register-button")
 
             // Save registered file information.
             registeredFileId = result.fileId;
+
             localStorage.setItem(
                 "temperd_original_filename",
                 result.fileName
@@ -465,6 +508,9 @@ document.getElementById("register-button")
 
             panel.appendChild(instruction);
 
+            // Refresh dashboard statistics after registration.
+            await loadDashboardStats();
+
             console.log("Registration response:", result);
 
         } catch (error) {
@@ -498,32 +544,33 @@ document.getElementById("verify-button")
             alert("Please select a file first!");
             return;
         }
+
         // Check whether the selected file matches
-// the registered original filename.
+        // the registered original filename.
 
-const originalFileName =
-    localStorage.getItem("temperd_original_filename");
+        const originalFileName =
+            localStorage.getItem("temperd_original_filename");
 
-if (
-    originalFileName &&
-    verifyFile.name !== originalFileName
-) {
+        if (
+            originalFileName &&
+            verifyFile.name !== originalFileName
+        ) {
 
-    const proceed = confirm(
-        "WARNING: The selected file has a different filename " +
-        "from the registered original.\n\n" +
+            const proceed = confirm(
+                "WARNING: The selected file has a different filename " +
+                "from the registered original.\n\n" +
 
-        "Registered file: " + originalFileName + "\n" +
-        "Selected file: " + verifyFile.name + "\n\n" +
+                "Registered file: " + originalFileName + "\n" +
+                "Selected file: " + verifyFile.name + "\n\n" +
 
-        "This might be a different file.\n" +
-        "Do you still want to continue verification?"
-    );
+                "This might be a different file.\n" +
+                "Do you still want to continue verification?"
+            );
 
-    if (!proceed) {
-        return;
-    }
-}
+            if (!proceed) {
+                return;
+            }
+        }
 
         if (!registeredFileId) {
 
@@ -591,285 +638,208 @@ if (
 
             addDetail(panel, "Original Merkle Root", result.originalRoot);
             addDetail(panel, "Current Merkle Root", result.currentRoot);
-            
 
-            
-// ------------------------------------------
-// DISPLAY TEXT-LEVEL CHANGES
-// ------------------------------------------
 
-addSection(panel, "Detected Content Changes");
+            // ------------------------------------------
+            // DISPLAY TEXT-LEVEL CHANGES
+            // ------------------------------------------
 
-if (result.textChanges?.length) {
+            addSection(panel, "Detected Content Changes");
 
-    result.textChanges.forEach(change => {
-
-        // Support both camelCase and snake_case JSON fields.
-        const changeType =
-            change.changeType ?? change.change_type ?? "MODIFIED";
-
-        const originalLine =
-            change.originalLineNumber ??
-            change.original_line ??
-            change.originalLine ??
-            "N/A";
-
-        const currentLine =
-            change.currentLineNumber ??
-            change.current_line ??
-            change.currentLine ??
-            "N/A";
-
-        const originalText =
-            change.originalText ??
-            change.original_text ??
-            "";
-
-        const currentText =
-            change.currentText ??
-            change.current_text ??
-            "";
-
-        const removedWords =
-            change.removedWords ??
-            change.removed_words ??
-            [];
-
-        const addedWords =
-            change.addedWords ??
-            change.added_words ??
-            [];
-
-        const card = document.createElement("div");
-
-        card.style.cssText = `
-            margin-top: 14px;
-            padding: 18px;
-            background: #192943;
-            border: 1px solid #304969;
-            border-radius: 10px;
-        `;
-
-        // Change heading
-        const heading = document.createElement("div");
-
-        heading.style.cssText = `
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
-        `;
-
-        const changeLabel = document.createElement("strong");
-
-        changeLabel.textContent = changeType;
-        changeLabel.style.color = "#80b9ff";
-
-        const lineLabel = document.createElement("span");
-
-        lineLabel.textContent =
-            "Original line: " + originalLine +
-            " | Current line: " + currentLine;
-
-        lineLabel.style.cssText = `
-            color: #a9bad0;
-            font-size: 12px;
-        `;
-
-        heading.append(changeLabel, lineLabel);
-        card.appendChild(heading);
-
-        // Original content
-        const originalLabel = document.createElement("p");
-
-        originalLabel.textContent = "ORIGINAL CONTENT";
-        originalLabel.style.cssText = `
-            color: #ff9292;
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 7px;
-        `;
-
-        const originalContent = document.createElement("div");
-
-        originalContent.textContent = originalText || "(Empty)";
-        originalContent.style.cssText = `
-            background: #ef646420;
-            color: #ffaaaa;
-            padding: 12px;
-            border-radius: 7px;
-            margin-bottom: 14px;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        `;
-
-        // Modified content
-        const currentLabel = document.createElement("p");
-
-        currentLabel.textContent = "MODIFIED CONTENT";
-        currentLabel.style.cssText = `
-            color: #62e2ad;
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 7px;
-        `;
-
-        const currentContent = document.createElement("div");
-
-        currentContent.textContent = currentText || "(Empty)";
-        currentContent.style.cssText = `
-            background: #22c58b20;
-            color: #80e8bd;
-            padding: 12px;
-            border-radius: 7px;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        `;
-
-        card.append(
-            originalLabel,
-            originalContent,
-            currentLabel,
-            currentContent
-        );
-
-        // Removed and added words
-        if (removedWords.length || addedWords.length) {
-
-            const wordChanges = document.createElement("div");
-
-            wordChanges.style.cssText = `
-                display: flex;
-                flex-wrap: wrap;
-                gap: 20px;
-                margin-top: 16px;
-                font-size: 12px;
-            `;
-
-            if (removedWords.length) {
-
-                const removed = document.createElement("p");
-
-                removed.textContent =
-                    "− Removed: " + removedWords.join(", ");
-
-                removed.style.color = "#ff9292";
-
-                wordChanges.appendChild(removed);
-            }
-
-            if (addedWords.length) {
-
-                const added = document.createElement("p");
-
-                added.textContent =
-                    "+ Added: " + addedWords.join(", ");
-
-                added.style.color = "#62e2ad";
-
-                wordChanges.appendChild(added);
-            }
-
-            card.appendChild(wordChanges);
-        }
-
-        panel.appendChild(card);
-
-    });
-
-} else {
-
-    const message = document.createElement("p");
-
-    message.textContent =
-        "No text-level changes available for this file.";
-
-    message.style.cssText = `
-        color: #91a3bb;
-        margin-top: 12px;
-    `;
-
-    panel.appendChild(message);
-}
-
-            /* addDetail(
-                panel,
-                "Changed Blocks",
-                result.changedBlocks?.length ?? 0
-            );
-
-            addDetail(
-                panel,
-                "Text Changes",
-                result.textChanges?.length ?? 0
-            );
-
-            // Display changed block information.
-            if (result.changedBlocks?.length) {
-
-                addSection(panel, "Changed Blocks");
-
-                result.changedBlocks.forEach(block => {
-
-                    const item = document.createElement("p");
-
-                    item.textContent =
-                        typeof block === "object"
-                            ? JSON.stringify(block)
-                            : "Block " + block;
-
-                    panel.appendChild(item);
-
-                });
-
-            }
-
-            // Display text-level differences.
             if (result.textChanges?.length) {
 
-                addSection(panel, "Text-Level Changes");
-
                 result.textChanges.forEach(change => {
+
+                    // Support both camelCase and snake_case JSON fields.
+                    const changeType =
+                        change.changeType ?? change.change_type ?? "MODIFIED";
+
+                    const originalLine =
+                        change.originalLineNumber ??
+                        change.original_line ??
+                        change.originalLine ??
+                        "N/A";
+
+                    const currentLine =
+                        change.currentLineNumber ??
+                        change.current_line ??
+                        change.currentLine ??
+                        "N/A";
+
+                    const originalText =
+                        change.originalText ??
+                        change.original_text ??
+                        "";
+
+                    const currentText =
+                        change.currentText ??
+                        change.current_text ??
+                        "";
+
+                    const removedWords =
+                        change.removedWords ??
+                        change.removed_words ??
+                        [];
+
+                    const addedWords =
+                        change.addedWords ??
+                        change.added_words ??
+                        [];
 
                     const card = document.createElement("div");
 
                     card.style.cssText = `
-                        margin-top: 12px;
-                        padding: 14px;
+                        margin-top: 14px;
+                        padding: 18px;
                         background: #192943;
-                        border-radius: 8px;
+                        border: 1px solid #304969;
+                        border-radius: 10px;
                     `;
 
-                    const type = document.createElement("strong");
+                    // Change heading
+                    const heading = document.createElement("div");
 
-                    type.textContent = change.change_type || "CHANGE";
+                    heading.style.cssText = `
+                        display: flex;
+                        justify-content: space-between;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        margin-bottom: 16px;
+                    `;
 
-                    card.appendChild(type);
+                    const changeLabel = document.createElement("strong");
 
-                    addDetail(card, "Original Line", change.original_line);
-                    addDetail(card, "Current Line", change.current_line);
-                    addDetail(card, "Original Text", change.original_text);
-                    addDetail(card, "Current Text", change.current_text);
+                    changeLabel.textContent = changeType;
+                    changeLabel.style.color = "#80b9ff";
 
-                    addDetail(
-                        card,
-                        "Removed Words",
-                        change.removed_words?.join(", ")
+                    const lineLabel = document.createElement("span");
+
+                    lineLabel.textContent =
+                        "Original line: " + originalLine +
+                        " | Current line: " + currentLine;
+
+                    lineLabel.style.cssText = `
+                        color: #a9bad0;
+                        font-size: 12px;
+                    `;
+
+                    heading.append(changeLabel, lineLabel);
+                    card.appendChild(heading);
+
+                    // Original content
+                    const originalLabel = document.createElement("p");
+
+                    originalLabel.textContent = "ORIGINAL CONTENT";
+                    originalLabel.style.cssText = `
+                        color: #ff9292;
+                        font-size: 11px;
+                        font-weight: 700;
+                        margin-bottom: 7px;
+                    `;
+
+                    const originalContent = document.createElement("div");
+
+                    originalContent.textContent = originalText || "(Empty)";
+                    originalContent.style.cssText = `
+                        background: #ef646420;
+                        color: #ffaaaa;
+                        padding: 12px;
+                        border-radius: 7px;
+                        margin-bottom: 14px;
+                        white-space: pre-wrap;
+                        overflow-wrap: anywhere;
+                    `;
+
+                    // Modified content
+                    const currentLabel = document.createElement("p");
+
+                    currentLabel.textContent = "MODIFIED CONTENT";
+                    currentLabel.style.cssText = `
+                        color: #62e2ad;
+                        font-size: 11px;
+                        font-weight: 700;
+                        margin-bottom: 7px;
+                    `;
+
+                    const currentContent = document.createElement("div");
+
+                    currentContent.textContent = currentText || "(Empty)";
+                    currentContent.style.cssText = `
+                        background: #22c58b20;
+                        color: #80e8bd;
+                        padding: 12px;
+                        border-radius: 7px;
+                        white-space: pre-wrap;
+                        overflow-wrap: anywhere;
+                    `;
+
+                    card.append(
+                        originalLabel,
+                        originalContent,
+                        currentLabel,
+                        currentContent
                     );
 
-                    addDetail(
-                        card,
-                        "Added Words",
-                        change.added_words?.join(", ")
-                    );
+                    // Removed and added words
+                    if (removedWords.length || addedWords.length) {
+
+                        const wordChanges = document.createElement("div");
+
+                        wordChanges.style.cssText = `
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            margin-top: 16px;
+                            font-size: 12px;
+                        `;
+
+                        if (removedWords.length) {
+
+                            const removed = document.createElement("p");
+
+                            removed.textContent =
+                                "− Removed: " + removedWords.join(", ");
+
+                            removed.style.color = "#ff9292";
+
+                            wordChanges.appendChild(removed);
+                        }
+
+                        if (addedWords.length) {
+
+                            const added = document.createElement("p");
+
+                            added.textContent =
+                                "+ Added: " + addedWords.join(", ");
+
+                            added.style.color = "#62e2ad";
+
+                            wordChanges.appendChild(added);
+                        }
+
+                        card.appendChild(wordChanges);
+                    }
 
                     panel.appendChild(card);
 
                 });
 
+            } else {
+
+                const message = document.createElement("p");
+
+                message.textContent =
+                    "No text-level changes available for this file.";
+
+                message.style.cssText = `
+                    color: #91a3bb;
+                    margin-top: 12px;
+                `;
+
+                panel.appendChild(message);
             }
- */
+
+
             // Save report details.
             if (result.reportUrl) {
 
@@ -918,9 +888,12 @@ if (result.textChanges?.length) {
 
             panel.appendChild(reportButton);
 
+            // Refresh dashboard statistics after verification.
+            await loadDashboardStats();
+
             console.log("Verification response:", result);
 
-            // Make analysis page accessible.
+            // Keep verification results visible.
             showPage("verify");
 
         } catch (error) {
@@ -946,146 +919,7 @@ if (result.textChanges?.length) {
 // ==========================================
 // 12. REPORT RETRIEVAL
 // ==========================================
-/* 
-async function displayLatestReport() {
 
-    const reportsPage = document.getElementById("reports");
-
-    let panel = document.getElementById("reports-result");
-
-    if (!panel) {
-
-        panel = document.createElement("div");
-
-        panel.id = "reports-result";
-
-        panel.style.cssText = `
-            margin-top: 24px;
-            padding: 22px;
-            border-radius: 12px;
-            background: #111c30;
-            border: 1px solid #263b5b;
-            color: #e5edf8;
-            overflow-wrap: anywhere;
-        `;
-
-        reportsPage.appendChild(panel);
-
-    }
-
-    panel.replaceChildren();
-
-    if (!latestReportUrl) {
-
-        showMessage(
-            panel,
-            "No verification report available yet.",
-            "info"
-        );
-
-        return;
-    }
-
-    showMessage(
-        panel,
-        "Loading verification report...",
-        "info"
-    );
-
-    try {
-
-        const response = await fetch(
-            `${API_BASE_URL}${latestReportUrl}`
-        );
-
-        if (!response.ok) {
-            throw new Error("Unable to retrieve report.");
-        }
-
-        const report = await response.json();
-
-        panel.replaceChildren();
-
-        showMessage(
-            panel,
-            "Verification Report Retrieved",
-            "success"
-        );
-
-        addDetail(panel, "Report ID", latestReportId);
-
-        addSection(panel, "Full Report Data");
-
-        const pre = document.createElement("pre");
-
-        pre.textContent = JSON.stringify(report, null, 2);
-
-        pre.style.cssText = `
-            white-space: pre-wrap;
-            overflow-x: auto;
-            padding: 16px;
-            background: #0b1424;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.6;
-        `;
-
-        panel.appendChild(pre);
-
-        const downloadButton = document.createElement("button");
-
-        downloadButton.textContent = "Download JSON Report";
-
-        downloadButton.style.cssText = `
-            margin-top: 16px;
-            padding: 11px 20px;
-            border: none;
-            border-radius: 7px;
-            background: #2878d0;
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-        `;
-
-        downloadButton.addEventListener("click", () => {
-
-            const blob = new Blob(
-                [JSON.stringify(report, null, 2)],
-                { type: "application/json" }
-            );
-
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-
-            link.href = url;
-
-            link.download =
-                (latestReportId || "temperd-report") + ".json";
-
-            link.click();
-
-            URL.revokeObjectURL(url);
-
-        });
-
-        panel.appendChild(downloadButton);
-
-        console.log("Retrieved report:", report);
-
-    } catch (error) {
-
-        console.error("Report retrieval error:", error);
-
-        showMessage(
-            panel,
-            "Report retrieval failed: " + error.message,
-            "error"
-        );
-
-    }
-
-} */
 async function displayLatestReport() {
 
     const reportsPage = document.getElementById("reports");
@@ -1156,6 +990,7 @@ async function displayLatestReport() {
         function createCard(title, value, color = "#e5edf8") {
 
             const card = createElement("div");
+
             card.style.cssText = `
                 background: #111c30;
                 border: 1px solid #263b5b;
@@ -1165,6 +1000,7 @@ async function displayLatestReport() {
             `;
 
             const heading = createElement("p", "", title);
+
             heading.style.cssText = `
                 color: #9aabc2;
                 font-size: 13px;
@@ -1172,6 +1008,7 @@ async function displayLatestReport() {
             `;
 
             const number = createElement("h2", "", value);
+
             number.style.cssText = `
                 color: ${color};
                 font-size: 28px;
@@ -1197,6 +1034,7 @@ async function displayLatestReport() {
             `;
 
             const heading = createElement("h3", "", title);
+
             heading.style.cssText = `
                 font-size: 17px;
                 margin: 0 0 8px;
@@ -1206,12 +1044,15 @@ async function displayLatestReport() {
             section.appendChild(heading);
 
             if (description) {
+
                 const paragraph = createElement("p", "", description);
+
                 paragraph.style.cssText = `
                     color: #91a3bb;
                     font-size: 13px;
                     margin: 0 0 18px;
                 `;
+
                 section.appendChild(paragraph);
             }
 
@@ -1271,6 +1112,7 @@ async function displayLatestReport() {
             `;
 
             row.append(labelElement, valueElement);
+
             parent.appendChild(row);
         }
 
@@ -1286,6 +1128,7 @@ async function displayLatestReport() {
             `;
 
             const heading = createElement("p", "", label);
+
             heading.style.cssText = `
                 color: #91a3bb;
                 font-size: 12px;
@@ -1303,6 +1146,7 @@ async function displayLatestReport() {
             `;
 
             container.append(heading, value);
+
             parent.appendChild(container);
         }
 
@@ -1367,6 +1211,7 @@ async function displayLatestReport() {
         `;
 
         const brand = createElement("strong", "", "TEMPERD");
+
         brand.style.cssText = `
             font-size: 18px;
             letter-spacing: 2px;
@@ -1422,6 +1267,7 @@ async function displayLatestReport() {
         `;
 
         header.append(topRow, title, reportId, generatedAt);
+
         panel.appendChild(header);
 
         // ------------------------------------------
@@ -1495,6 +1341,7 @@ async function displayLatestReport() {
         );
 
         createInfoRow(originalBox, "File Name", original.name);
+
         createInfoRow(
             originalBox,
             "File Size",
@@ -1502,6 +1349,7 @@ async function displayLatestReport() {
         );
 
         createInfoRow(currentBox, "File Name", current.name);
+
         createInfoRow(
             currentBox,
             "File Size",
@@ -1509,6 +1357,7 @@ async function displayLatestReport() {
         );
 
         fileGrid.append(originalBox, currentBox);
+
         fileSection.appendChild(fileGrid);
 
         // ------------------------------------------
@@ -1575,6 +1424,7 @@ async function displayLatestReport() {
             );
 
             message.style.color = "#22c58b";
+
             blockSection.appendChild(message);
 
         } else {
@@ -1657,7 +1507,9 @@ async function displayLatestReport() {
             });
 
             table.append(thead, tbody);
+
             tableWrapper.appendChild(table);
+
             blockSection.appendChild(tableWrapper);
 
         }
@@ -1680,6 +1532,7 @@ async function displayLatestReport() {
             );
 
             message.style.color = "#eab54d";
+
             textSection.appendChild(message);
 
         } else if (textChanges.length === 0) {
@@ -1691,6 +1544,7 @@ async function displayLatestReport() {
             );
 
             message.style.color = "#22c58b";
+
             textSection.appendChild(message);
 
         } else {
@@ -1890,6 +1744,7 @@ async function displayLatestReport() {
             const link = document.createElement("a");
 
             link.href = url;
+
             link.download =
                 (report.report_id || "temperd-report") + ".json";
 
@@ -2021,6 +1876,7 @@ async function displayLatestReport() {
         });
 
         actions.append(downloadButton, printButton);
+
         panel.appendChild(actions);
 
         console.log("Formatted TemperD report:", report);
@@ -2040,11 +1896,12 @@ async function displayLatestReport() {
 }
 
 
-
 // ==========================================
 // 13. INITIALIZATION
 // ==========================================
 
 showPage("dashboard");
+
+loadDashboardStats();
 
 console.log("TemperD frontend initialized successfully!");

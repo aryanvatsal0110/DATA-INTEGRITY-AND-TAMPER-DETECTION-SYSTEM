@@ -12,12 +12,18 @@
 #include <iomanip>
 #include <system_error>
 #include <vector>
+#include <mutex>
+#include <set>
+#include <map>
+#include <stdexcept>
+#include <iterator>
 
 namespace fs = std::filesystem;
 
-// --------------------------------------------------
-// GLOBAL UTILITIES
-// --------------------------------------------------
+
+// ==========================================
+// 1. GLOBAL UTILITIES
+// ==========================================
 
 static std::atomic<unsigned long long> uploadCounter{0};
 
@@ -69,10 +75,289 @@ std::string jsonError(const std::string& message)
 }
 
 
-// Add CORS headers
+// ==========================================
+// 2. DASHBOARD STATISTICS MANAGER
+// ==========================================
+
+class DashboardStats
+{
+private:
+
+    std::mutex mutex;
+
+    // All successfully registered file IDs.
+    std::set<std::string> registeredFiles;
+
+    // Latest verification status of each registered file.
+    // true = Authentic
+    // false = Tampered
+    std::map<std::string, bool> latestVerification;
+
+    // Counts every successful verification operation.
+    unsigned long long totalVerifications = 0;
+
+    const fs::path statsPath =
+        "storage/dashboard_stats.dat";
+
+
+    // Save statistics to persistent storage.
+    void saveUnlocked()
+    {
+        fs::path temporaryPath =
+            "storage/dashboard_stats.tmp";
+
+        std::ofstream output(
+            temporaryPath,
+            std::ios::trunc
+        );
+
+        if (!output.is_open())
+        {
+            throw std::runtime_error(
+                "Unable to save dashboard statistics."
+            );
+        }
+
+        output << "TEMPERD_STATS_V1\n";
+
+        output << "C "
+               << totalVerifications
+               << "\n";
+
+        for (const auto& fileId : registeredFiles)
+        {
+            output << "R "
+                   << std::quoted(fileId)
+                   << "\n";
+        }
+
+        for (const auto& entry : latestVerification)
+        {
+            output << "V "
+                   << std::quoted(entry.first)
+                   << " "
+                   << (entry.second ? 1 : 0)
+                   << "\n";
+        }
+
+        output.close();
+
+        if (!output)
+        {
+            throw std::runtime_error(
+                "Unable to write dashboard statistics."
+            );
+        }
+
+        std::error_code error;
+
+        fs::remove(statsPath, error);
+
+        error.clear();
+
+        fs::rename(
+            temporaryPath,
+            statsPath,
+            error
+        );
+
+        if (error)
+        {
+            fs::remove(temporaryPath);
+
+            throw std::runtime_error(
+                "Unable to update dashboard statistics."
+            );
+        }
+    }
+
+
+public:
+
+    // Load statistics when the server starts.
+    void load()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        registeredFiles.clear();
+        latestVerification.clear();
+
+        totalVerifications = 0;
+
+        std::ifstream input(statsPath);
+
+        if (!input.is_open())
+        {
+            return;
+        }
+
+        std::string header;
+
+        std::getline(input, header);
+
+        if (header != "TEMPERD_STATS_V1")
+        {
+            std::cerr
+                << "Warning: Invalid dashboard statistics file."
+                << "\n";
+
+            return;
+        }
+
+        std::string line;
+
+        while (std::getline(input, line))
+        {
+            std::istringstream record(line);
+
+            char type;
+
+            if (!(record >> type))
+            {
+                continue;
+            }
+
+            if (type == 'C')
+            {
+                record >> totalVerifications;
+            }
+
+            else if (type == 'R')
+            {
+                std::string fileId;
+
+                if (record >> std::quoted(fileId))
+                {
+                    registeredFiles.insert(fileId);
+                }
+            }
+
+            else if (type == 'V')
+            {
+                std::string fileId;
+
+                int authentic = 0;
+
+                if (record >> std::quoted(fileId) >> authentic)
+                {
+                    latestVerification[fileId] =
+                        (authentic == 1);
+                }
+            }
+        }
+
+        std::cout
+            << "\nDashboard statistics loaded successfully."
+            << "\n";
+    }
+
+
+    // Record a successful registration.
+    void recordRegistration(const std::string& fileId)
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        registeredFiles.insert(fileId);
+
+        try
+        {
+            saveUnlocked();
+        }
+        catch (const std::exception& error)
+        {
+            std::cerr
+                << "Statistics save error: "
+                << error.what()
+                << "\n";
+        }
+    }
+
+
+    // Record a successful verification.
+    void recordVerification(
+        const std::string& fileId,
+        bool authentic
+    )
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        latestVerification[fileId] = authentic;
+
+        totalVerifications++;
+
+        try
+        {
+            saveUnlocked();
+        }
+        catch (const std::exception& error)
+        {
+            std::cerr
+                << "Statistics save error: "
+                << error.what()
+                << "\n";
+        }
+    }
+
+
+    // Generate dashboard statistics JSON.
+    std::string toJson()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        size_t authenticCount = 0;
+
+        size_t tamperedCount = 0;
+
+        for (const auto& entry : latestVerification)
+        {
+            if (entry.second)
+            {
+                authenticCount++;
+            }
+            else
+            {
+                tamperedCount++;
+            }
+        }
+
+        std::ostringstream json;
+
+        json << "{";
+
+        json << "\"success\":true,";
+
+        json << "\"registeredFiles\":"
+             << registeredFiles.size()
+             << ",";
+
+        json << "\"authenticFiles\":"
+             << authenticCount
+             << ",";
+
+        json << "\"tamperedFiles\":"
+             << tamperedCount
+             << ",";
+
+        json << "\"totalVerifications\":"
+             << totalVerifications;
+
+        json << "}";
+
+        return json.str();
+    }
+};
+
+
+// ==========================================
+// 3. CORS HEADERS
+// ==========================================
+
 void addCorsHeaders(httplib::Response& res)
 {
-    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header(
+        "Access-Control-Allow-Origin",
+        "*"
+    );
 
     res.set_header(
         "Access-Control-Allow-Methods",
@@ -86,7 +371,10 @@ void addCorsHeaders(httplib::Response& res)
 }
 
 
-// Generate a unique temporary upload path
+// ==========================================
+// 4. TEMPORARY UPLOAD PATH
+// ==========================================
+
 fs::path createTemporaryUploadPath(
     const std::string& filename
 )
@@ -111,18 +399,19 @@ fs::path createTemporaryUploadPath(
 }
 
 
-// Save uploaded multipart file
-/* bool saveUploadedFile(
-    const httplib::MultipartFormData& uploadedFile,
-    fs::path& outputPath
-) */
+// ==========================================
+// 5. SAVE UPLOADED MULTIPART FILE
+// ==========================================
+
 bool saveUploadedFile(
     const httplib::FormData& uploadedFile,
     fs::path& outputPath
 )
 {
     std::string filename =
-        httplib::sanitize_filename(uploadedFile.filename);
+        httplib::sanitize_filename(
+            uploadedFile.filename
+        );
 
     if (filename.empty())
     {
@@ -131,14 +420,18 @@ bool saveUploadedFile(
 
     std::error_code error;
 
-    fs::create_directories("storage/uploads", error);
+    fs::create_directories(
+        "storage/uploads",
+        error
+    );
 
     if (error)
     {
         return false;
     }
 
-    outputPath = createTemporaryUploadPath(filename);
+    outputPath =
+        createTemporaryUploadPath(filename);
 
     std::ofstream output(
         outputPath,
@@ -162,6 +455,7 @@ bool saveUploadedFile(
     if (!output)
     {
         fs::remove(outputPath, error);
+
         return false;
     }
 
@@ -169,7 +463,10 @@ bool saveUploadedFile(
 }
 
 
-// Convert block localization results into JSON
+// ==========================================
+// 6. SERIALIZE BLOCK CHANGES
+// ==========================================
+
 std::string serializeBlockChanges(
     const LocalizationResult& localization
 )
@@ -178,7 +475,9 @@ std::string serializeBlockChanges(
 
     json << "[";
 
-    for (size_t i = 0; i < localization.changes.size(); ++i)
+    for (size_t i = 0;
+         i < localization.changes.size();
+         ++i)
     {
         const BlockChange& change =
             localization.changes[i];
@@ -220,7 +519,10 @@ std::string serializeBlockChanges(
 }
 
 
-// Convert text comparison results into JSON
+// ==========================================
+// 7. SERIALIZE TEXT CHANGES
+// ==========================================
+
 std::string serializeTextChanges(
     const FileComparisonResult& comparison
 )
@@ -229,7 +531,9 @@ std::string serializeTextChanges(
 
     json << "[";
 
-    for (size_t i = 0; i < comparison.changes.size(); ++i)
+    for (size_t i = 0;
+         i < comparison.changes.size();
+         ++i)
     {
         const LineChange& change =
             comparison.changes[i];
@@ -258,25 +562,34 @@ std::string serializeTextChanges(
 
         json << "{";
 
-        json << "\"changeType\":\"" << type << "\",";
+        json << "\"changeType\":\""
+             << type
+             << "\",";
 
         json << "\"originalLine\":"
-             << change.originalLineNumber << ",";
+             << change.originalLineNumber
+             << ",";
 
         json << "\"currentLine\":"
-             << change.currentLineNumber << ",";
+             << change.currentLineNumber
+             << ",";
 
         json << "\"originalText\":\""
-             << jsonEscape(change.originalText) << "\",";
+             << jsonEscape(change.originalText)
+             << "\",";
 
         json << "\"currentText\":\""
-             << jsonEscape(change.currentText) << "\",";
+             << jsonEscape(change.currentText)
+             << "\",";
 
         json << "\"removedWords\":[";
 
-        for (size_t j = 0; j < change.removedWords.size(); ++j)
+        for (size_t j = 0;
+             j < change.removedWords.size();
+             ++j)
         {
-            if (j > 0) json << ",";
+            if (j > 0)
+                json << ",";
 
             json << "\""
                  << jsonEscape(change.removedWords[j])
@@ -285,9 +598,12 @@ std::string serializeTextChanges(
 
         json << "],\"addedWords\":[";
 
-        for (size_t j = 0; j < change.addedWords.size(); ++j)
+        for (size_t j = 0;
+             j < change.addedWords.size();
+             ++j)
         {
-            if (j > 0) json << ",";
+            if (j > 0)
+                json << ",";
 
             json << "\""
                  << jsonEscape(change.addedWords[j])
@@ -303,13 +619,13 @@ std::string serializeTextChanges(
 }
 
 
-// --------------------------------------------------
-// MAIN SERVER
-// --------------------------------------------------
+// ==========================================
+// 8. MAIN SERVER
+// ==========================================
 
 int main()
 {
-    // STEP 1: Create storage directories
+    // Create storage directories.
 
     fs::create_directories("storage/uploads");
     fs::create_directories("storage/original_files");
@@ -317,16 +633,25 @@ int main()
     fs::create_directories("storage/reports");
 
 
-    // STEP 2: Initialize processing engine
+    // Initialize processing engine.
 
     TemperDProcessor processor;
+
+
+    // Initialize and load dashboard statistics.
+
+    DashboardStats dashboardStats;
+
+    dashboardStats.load();
+
 
     httplib::Server server;
 
 
-    // --------------------------------------------------
-    // STEP 3: HEALTH CHECK
-    // --------------------------------------------------
+    // ==========================================
+    // 9. HEALTH CHECK
+    // GET /api/health
+    // ==========================================
 
     server.Get(
         "/api/health",
@@ -344,9 +669,45 @@ int main()
     );
 
 
-    // --------------------------------------------------
-    // STEP 4: CORS PREFLIGHT
-    // --------------------------------------------------
+    // ==========================================
+    // 10. DASHBOARD STATISTICS
+    // GET /api/stats
+    // ==========================================
+
+    server.Get(
+        "/api/stats",
+
+        [&](const httplib::Request& req,
+            httplib::Response& res)
+        {
+            addCorsHeaders(res);
+
+            res.set_content(
+                dashboardStats.toJson(),
+                "application/json"
+            );
+        }
+    );
+
+
+    // CORS preflight for statistics.
+
+    server.Options(
+        "/api/stats",
+
+        [&](const httplib::Request& req,
+            httplib::Response& res)
+        {
+            addCorsHeaders(res);
+
+            res.status = 204;
+        }
+    );
+
+
+    // ==========================================
+    // 11. CORS PREFLIGHT
+    // ==========================================
 
     server.Options(
         "/api/register",
@@ -355,6 +716,7 @@ int main()
             httplib::Response& res)
         {
             addCorsHeaders(res);
+
             res.status = 204;
         }
     );
@@ -367,15 +729,16 @@ int main()
             httplib::Response& res)
         {
             addCorsHeaders(res);
+
             res.status = 204;
         }
     );
 
 
-    // --------------------------------------------------
-    // STEP 5: REGISTER FILE
+    // ==========================================
+    // 12. REGISTER FILE
     // POST /api/register
-    // --------------------------------------------------
+    // ==========================================
 
     server.Post(
         "/api/register",
@@ -385,7 +748,8 @@ int main()
         {
             addCorsHeaders(res);
 
-            // Check multipart request
+            // Validate multipart request.
+
             if (!req.is_multipart_form_data() ||
                 !req.form.has_file("file"))
             {
@@ -399,11 +763,15 @@ int main()
                 return;
             }
 
-            // Get uploaded file
+
+            // Retrieve uploaded file.
+
             const auto& uploadedFile =
                 req.form.get_file("file");
 
-            // Save temporary upload
+
+            // Save temporary upload.
+
             fs::path temporaryPath;
 
             if (!saveUploadedFile(
@@ -414,14 +782,18 @@ int main()
                 res.status = 500;
 
                 res.set_content(
-                    jsonError("Unable to save uploaded file."),
+                    jsonError(
+                        "Unable to save uploaded file."
+                    ),
                     "application/json"
                 );
 
                 return;
             }
 
-            // Register using all four processing modules
+
+            // Register using TemperD processing modules.
+
             RegistrationResult registration;
 
             bool success = processor.registerFile(
@@ -430,10 +802,15 @@ int main()
                 registration
             );
 
-            // Remove temporary upload
+
+            // Remove temporary upload.
+
             std::error_code error;
 
             fs::remove(temporaryPath, error);
+
+
+            // Handle registration failure.
 
             if (!success)
             {
@@ -452,7 +829,16 @@ int main()
                 return;
             }
 
-            // Send registration details to frontend
+
+            // Update dashboard statistics.
+
+            dashboardStats.recordRegistration(
+                registration.fileId
+            );
+
+
+            // Construct registration response.
+
             std::ostringstream response;
 
             response << "{";
@@ -480,40 +866,52 @@ int main()
                      << "\",";
 
             response << "\"fileSize\":"
-                     << registration.fileSize << ",";
+                     << registration.fileSize
+                     << ",";
 
             response << "\"blockSize\":"
-                     << registration.blockSize << ",";
+                     << registration.blockSize
+                     << ",";
 
             response << "\"totalBlocks\":"
                      << registration.totalBlocks;
 
             response << "}";
 
+
             res.set_content(
                 response.str(),
                 "application/json"
             );
 
+
+            // Console output.
+
             std::cout
                 << "\n========== FILE REGISTERED ==========\n";
 
-            std::cout << "File ID: "
-                      << registration.fileId << "\n";
+            std::cout
+                << "File ID: "
+                << registration.fileId
+                << "\n";
 
-            std::cout << "Merkle Root: "
-                      << registration.merkleRoot << "\n";
+            std::cout
+                << "Merkle Root: "
+                << registration.merkleRoot
+                << "\n";
 
-            std::cout << "Blocks: "
-                      << registration.totalBlocks << "\n";
+            std::cout
+                << "Blocks: "
+                << registration.totalBlocks
+                << "\n";
         }
     );
 
 
-    // --------------------------------------------------
-    // STEP 6: VERIFY FILE
+    // ==========================================
+    // 13. VERIFY FILE
     // POST /api/verify
-    // --------------------------------------------------
+    // ==========================================
 
     server.Post(
         "/api/verify",
@@ -523,7 +921,9 @@ int main()
         {
             addCorsHeaders(res);
 
-            // Validate multipart request
+
+            // Validate multipart request.
+
             if (!req.is_multipart_form_data() ||
                 !req.form.has_file("file") ||
                 !req.form.has_field("fileId"))
@@ -540,7 +940,9 @@ int main()
                 return;
             }
 
-            // Retrieve registered file ID
+
+            // Retrieve registered file ID.
+
             std::string fileId =
                 req.form.get_field("fileId");
 
@@ -556,11 +958,15 @@ int main()
                 return;
             }
 
-            // Retrieve uploaded file
+
+            // Retrieve uploaded file.
+
             const auto& uploadedFile =
                 req.form.get_file("file");
 
-            // Save temporary verification upload
+
+            // Save temporary verification upload.
+
             fs::path temporaryPath;
 
             if (!saveUploadedFile(
@@ -580,7 +986,9 @@ int main()
                 return;
             }
 
-            // Run verification and localization
+
+            // Run verification and localization.
+
             TemperDVerificationResult verification;
 
             bool success = processor.verifyRegisteredFile(
@@ -590,10 +998,15 @@ int main()
                 verification
             );
 
-            // Remove temporary file
+
+            // Remove temporary upload.
+
             std::error_code error;
 
             fs::remove(temporaryPath, error);
+
+
+            // Handle verification failure.
 
             if (!success)
             {
@@ -607,7 +1020,17 @@ int main()
                 return;
             }
 
-            // Construct response
+
+            // Update dashboard statistics.
+
+            dashboardStats.recordVerification(
+                fileId,
+                verification.verification.integrityMatch
+            );
+
+
+            // Construct verification response.
+
             std::ostringstream response;
 
             response << "{";
@@ -659,49 +1082,62 @@ int main()
                      << ",";
 
             response << "\"reportId\":\""
-                     << jsonEscape(verification.report.reportId)
+                     << jsonEscape(
+                            verification.report.reportId
+                        )
                      << "\",";
 
             response << "\"reportUrl\":\"/api/report/"
-                     << jsonEscape(verification.report.reportId)
+                     << jsonEscape(
+                            verification.report.reportId
+                        )
                      << "\"";
 
             response << "}";
+
 
             res.set_content(
                 response.str(),
                 "application/json"
             );
 
+
+            // Console output.
+
             std::cout
                 << "\n========== FILE VERIFIED ==========\n";
 
-            std::cout << "File ID: "
-                      << fileId << "\n";
+            std::cout
+                << "File ID: "
+                << fileId
+                << "\n";
 
-            std::cout << "Integrity: "
-                      << (
-                          verification.verification.integrityMatch
-                          ? "VERIFIED"
-                          : "TAMPERED"
-                      )
-                      << "\n";
+            std::cout
+                << "Integrity: "
+                << (
+                    verification.verification.integrityMatch
+                    ? "VERIFIED"
+                    : "TAMPERED"
+                )
+                << "\n";
 
-            std::cout << "Changed Blocks: "
-                      << verification.localization.changes.size()
-                      << "\n";
+            std::cout
+                << "Changed Blocks: "
+                << verification.localization.changes.size()
+                << "\n";
 
-            std::cout << "Report ID: "
-                      << verification.report.reportId
-                      << "\n";
+            std::cout
+                << "Report ID: "
+                << verification.report.reportId
+                << "\n";
         }
     );
 
 
-    // --------------------------------------------------
-    // STEP 7: RETRIEVE GENERATED REPORT
+    // ==========================================
+    // 14. RETRIEVE GENERATED REPORT
     // GET /api/report/{reportId}
-    // --------------------------------------------------
+    // ==========================================
 
     server.Get(
         R"(/api/report/([A-Za-z0-9_-]+))",
@@ -711,11 +1147,13 @@ int main()
         {
             addCorsHeaders(res);
 
-            std::string reportId = req.matches[1];
+            std::string reportId =
+                req.matches[1];
 
             fs::path reportPath =
                 fs::path("storage/reports") /
                 (reportId + ".json");
+
 
             std::ifstream input(
                 reportPath,
@@ -734,10 +1172,12 @@ int main()
                 return;
             }
 
+
             std::string reportData(
                 (std::istreambuf_iterator<char>(input)),
                 std::istreambuf_iterator<char>()
             );
+
 
             res.set_content(
                 reportData,
@@ -747,9 +1187,9 @@ int main()
     );
 
 
-    // --------------------------------------------------
-    // STEP 8: START SERVER
-    // --------------------------------------------------
+    // ==========================================
+    // 15. START SERVER
+    // ==========================================
 
     std::cout
         << "\n================================\n";
@@ -760,11 +1200,15 @@ int main()
     std::cout
         << "================================\n";
 
+
     std::cout
         << "\nAvailable endpoints:\n";
 
     std::cout
         << "GET  /api/health\n";
+
+    std::cout
+        << "GET  /api/stats\n";
 
     std::cout
         << "POST /api/register\n";
@@ -775,11 +1219,13 @@ int main()
     std::cout
         << "GET  /api/report/{reportId}\n";
 
+
     std::cout
         << "\nServer running at:\n";
 
     std::cout
         << "http://localhost:8080\n\n";
+
 
     if (!server.listen("127.0.0.1", 8080))
     {
