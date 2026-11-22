@@ -794,14 +794,32 @@ int main()
 
             // Register using TemperD processing modules.
 
-            RegistrationResult registration;
+            /* RegistrationResult registration;
 
             bool success = processor.registerFile(
                 temporaryPath.string(),
                 "storage",
                 registration
             );
+ */         RegistrationResult registration;
 
+auto startTime = std::chrono::steady_clock::now();
+
+bool success = processor.registerFile(
+    temporaryPath.string(),
+    "storage",
+    registration
+);
+
+auto endTime = std::chrono::steady_clock::now();
+
+double registrationTime =
+    std::chrono::duration<double, std::milli>(
+        endTime - startTime
+    ).count();
+
+std::cout << "\nRegistration Time: "
+          << registrationTime << " ms\n";
 
             // Remove temporary upload.
 
@@ -989,14 +1007,33 @@ int main()
 
             // Run verification and localization.
 
-            TemperDVerificationResult verification;
+           /*  TemperDVerificationResult verification;
 
             bool success = processor.verifyRegisteredFile(
                 temporaryPath.string(),
                 fileId,
                 "storage",
                 verification
-            );
+            ); */TemperDVerificationResult verification;
+
+auto startTime = std::chrono::steady_clock::now();
+
+bool success = processor.verifyRegisteredFile(
+    temporaryPath.string(),
+    fileId,
+    "storage",
+    verification
+);
+
+auto endTime = std::chrono::steady_clock::now();
+
+double verificationTime =
+    std::chrono::duration<double, std::milli>(
+        endTime - startTime
+    ).count();
+
+std::cout << "\nVerification Time: "
+          << verificationTime << " ms\n";
 
 
             // Remove temporary upload.

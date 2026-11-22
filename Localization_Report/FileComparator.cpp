@@ -245,11 +245,13 @@ void FileComparator::findLCS(
         bStart + bestSplit;
 
     // Release temporary rows before recursion
-    left.clear();
+   /*  left.clear();
     right.clear();
 
     left.shrink_to_fit();
-    right.shrink_to_fit();
+    right.shrink_to_fit(); */
+    // Temporary vectors are automatically released
+// when this recursive function returns.
 
     findLCS(
         a,
@@ -353,7 +355,7 @@ bool FileComparator::compareText(
     result.originalLineCount = oldLines.size();
     result.currentLineCount = newLines.size();
 
-    std::vector<std::pair<size_t, size_t>> matches;
+   /*  std::vector<std::pair<size_t, size_t>> matches;
 
     findLCS(
         oldLines,
@@ -363,7 +365,53 @@ bool FileComparator::compareText(
         0,
         newLines.size(),
         matches
+    ); */
+    std::vector<std::pair<size_t, size_t>> matches;
+
+// Find unchanged prefix
+size_t prefix = 0;
+
+while (prefix < oldLines.size() &&
+       prefix < newLines.size() &&
+       oldLines[prefix] == newLines[prefix]) {
+
+    matches.emplace_back(prefix, prefix);
+    ++prefix;
+}
+
+// Find unchanged suffix
+size_t oldEnd = oldLines.size();
+size_t newEnd = newLines.size();
+
+while (oldEnd > prefix &&
+       newEnd > prefix &&
+       oldLines[oldEnd - 1] == newLines[newEnd - 1]) {
+
+    --oldEnd;
+    --newEnd;
+}
+
+// Run LCS only on the remaining middle section
+findLCS(
+    oldLines,
+    prefix,
+    oldEnd,
+    newLines,
+    prefix,
+    newEnd,
+    matches
+);
+
+// Add unchanged suffix matches
+size_t suffixCount = oldLines.size() - oldEnd;
+
+for (size_t i = 0; i < suffixCount; ++i) {
+
+    matches.emplace_back(
+        oldEnd + i,
+        newEnd + i
     );
+}
 
     size_t oldIndex = 0;
     size_t newIndex = 0;
