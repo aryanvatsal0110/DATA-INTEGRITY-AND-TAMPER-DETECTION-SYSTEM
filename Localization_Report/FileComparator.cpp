@@ -470,6 +470,350 @@ bool FileComparator::compareText(
 // PART 7: Compare two files
 // --------------------------------------------------
 
+// --------------------------------------------------
+// PART 7: Parse CSV content safely
+// --------------------------------------------------
+
+bool FileComparator::parseCSV(
+    const std::string& content,
+    std::vector<std::vector<std::string>>& rows,
+    std::string& error
+) const {
+
+    rows.clear();
+    error.clear();
+
+    if (content.empty()) {
+        return true;
+    }
+
+    std::vector<std::string> row;
+    std::string field;
+
+    bool insideQuotes = false;
+    bool fieldStarted = false;
+
+    for (size_t i = 0; i < content.size(); ++i) {
+
+        char ch = content[i];
+
+        if (insideQuotes) {
+
+            if (ch == '"') {
+
+                // Escaped quote inside a quoted CSV field: ""
+                if (i + 1 < content.size() && content[i + 1] == '"') {
+                    field.push_back('"');
+                    ++i;
+                }
+                else {
+                    insideQuotes = false;
+                }
+
+            }
+            else {
+                // Commas and newlines inside quotes are field content.
+                field.push_back(ch);
+            }
+
+            continue;
+        }
+
+        if (ch == '"') {
+
+            if (fieldStarted || !field.empty()) {
+                error = "Invalid CSV: quote found inside an unquoted field.";
+                return false;
+            }
+
+            insideQuotes = true;
+            fieldStarted = true;
+        }
+        else if (ch == ',') {
+
+            row.push_back(field);
+            field.clear();
+            fieldStarted = false;
+        }
+        else if (ch == '\n') {
+
+            if (!field.empty() && field.back() == '\r') {
+                field.pop_back();
+            }
+
+            row.push_back(field);
+            rows.push_back(row);
+
+            row.clear();
+            field.clear();
+            fieldStarted = false;
+        }
+        else {
+
+            if (ch != '\r') {
+                field.push_back(ch);
+                fieldStarted = true;
+            }
+        }
+    }
+
+    if (insideQuotes) {
+        error = "Invalid CSV: quoted field was not closed.";
+        return false;
+    }
+
+    // Do not create an extra row for a final newline.
+    if (!row.empty() || !field.empty() || fieldStarted) {
+        row.push_back(field);
+        rows.push_back(row);
+    }
+
+    return true;
+}
+
+
+// --------------------------------------------------
+// PART 8: Compare CSV rows and individual cells
+// --------------------------------------------------
+
+bool FileComparator::compareCSV(
+    const std::string& original,
+    const std::string& current,
+    FileComparisonResult& result
+) const {
+
+    result = FileComparisonResult();
+
+    std::vector<std::vector<std::string>> oldRows;
+    std::vector<std::vector<std::string>> newRows;
+
+    std::string parseError;
+
+    if (!parseCSV(original, oldRows, parseError)) {
+        result.message = "Original CSV parsing failed: " + parseError;
+        return false;
+    }
+
+    if (!parseCSV(current, newRows, parseError)) {
+        result.message = "Current CSV parsing failed: " + parseError;
+        return false;
+    }
+
+    result.originalLineCount = oldRows.size();
+    result.currentLineCount = newRows.size();
+
+    // Convert rows into stable comparison strings so LCS can align
+    // unchanged rows even when rows have been inserted or removed.
+    auto serializeRow = [](const std::vector<std::string>& cells) {
+
+        std::string serialized;
+
+        for (size_t i = 0; i < cells.size(); ++i) {
+
+            if (i > 0) {
+                serialized.push_back('\x1F');
+            }
+
+            serialized += cells[i];
+        }
+
+        return serialized;
+    };
+
+    std::vector<std::string> oldSerialized;
+    std::vector<std::string> newSerialized;
+
+    oldSerialized.reserve(oldRows.size());
+    newSerialized.reserve(newRows.size());
+
+    for (const auto& row : oldRows) {
+        oldSerialized.push_back(serializeRow(row));
+    }
+
+    for (const auto& row : newRows) {
+        newSerialized.push_back(serializeRow(row));
+    }
+
+    std::vector<std::pair<size_t, size_t>> matches;
+
+    findLCS(
+        oldSerialized,
+        0,
+        oldSerialized.size(),
+        newSerialized,
+        0,
+        newSerialized.size(),
+        matches
+    );
+
+    // The first CSV row is treated as the header when available.
+    auto columnName = [&](size_t column) -> std::string {
+
+        if (!oldRows.empty() &&
+            column < oldRows.front().size() &&
+            !oldRows.front()[column].empty()) {
+            return oldRows.front()[column];
+        }
+
+        if (!newRows.empty() &&
+            column < newRows.front().size() &&
+            !newRows.front()[column].empty()) {
+            return newRows.front()[column];
+        }
+
+        return "Column " + std::to_string(column + 1);
+    };
+
+    auto compareMatchedRows = [&](size_t oldIndex, size_t newIndex) {
+
+        const auto& oldRow = oldRows[oldIndex];
+        const auto& newRow = newRows[newIndex];
+
+        const size_t maxColumns =
+            std::max(oldRow.size(), newRow.size());
+
+        for (size_t column = 0; column < maxColumns; ++column) {
+
+            const bool existsOld = column < oldRow.size();
+            const bool existsNew = column < newRow.size();
+
+            const std::string oldValue =
+                existsOld ? oldRow[column] : "";
+
+            const std::string newValue =
+                existsNew ? newRow[column] : "";
+
+            if (existsOld && existsNew && oldValue == newValue) {
+                continue;
+            }
+
+            LineChange change;
+
+            change.originalLineNumber = oldIndex + 1;
+            change.currentLineNumber = newIndex + 1;
+
+            const std::string name = columnName(column);
+
+            if (existsOld && existsNew) {
+
+                change.changeType = LineChangeType::MODIFIED;
+
+                change.originalText =
+                    name + ": " + oldValue;
+
+                change.currentText =
+                    name + ": " + newValue;
+            }
+            else if (existsOld) {
+
+                change.changeType = LineChangeType::REMOVED;
+
+                change.originalText =
+                    name + ": " + oldValue;
+            }
+            else {
+
+                change.changeType = LineChangeType::ADDED;
+
+                change.currentText =
+                    name + ": " + newValue;
+            }
+
+            result.changes.push_back(std::move(change));
+        }
+    };
+
+    size_t oldIndex = 0;
+    size_t newIndex = 0;
+
+    auto processGap = [&](size_t oldEnd, size_t newEnd) {
+
+        const size_t removedCount = oldEnd - oldIndex;
+        const size_t addedCount = newEnd - newIndex;
+
+        const size_t pairedCount =
+            std::min(removedCount, addedCount);
+
+        // Pair changed rows first, then compare their individual cells.
+        for (size_t i = 0; i < pairedCount; ++i) {
+
+            compareMatchedRows(oldIndex, newIndex);
+
+            ++oldIndex;
+            ++newIndex;
+        }
+
+        // Remaining original rows were removed.
+        while (oldIndex < oldEnd) {
+
+            LineChange change;
+
+            change.changeType = LineChangeType::REMOVED;
+            change.originalLineNumber = oldIndex + 1;
+
+            for (size_t column = 0; column < oldRows[oldIndex].size(); ++column) {
+
+                if (column > 0) {
+                    change.originalText += " | ";
+                }
+
+                change.originalText +=
+                    columnName(column) + ": " +
+                    oldRows[oldIndex][column];
+            }
+
+            result.changes.push_back(std::move(change));
+            ++oldIndex;
+        }
+
+        // Remaining current rows were added.
+        while (newIndex < newEnd) {
+
+            LineChange change;
+
+            change.changeType = LineChangeType::ADDED;
+            change.currentLineNumber = newIndex + 1;
+
+            for (size_t column = 0; column < newRows[newIndex].size(); ++column) {
+
+                if (column > 0) {
+                    change.currentText += " | ";
+                }
+
+                change.currentText +=
+                    columnName(column) + ": " +
+                    newRows[newIndex][column];
+            }
+
+            result.changes.push_back(std::move(change));
+            ++newIndex;
+        }
+    };
+
+    for (const auto& match : matches) {
+
+        processGap(match.first, match.second);
+
+        oldIndex = match.first + 1;
+        newIndex = match.second + 1;
+    }
+
+    processGap(oldRows.size(), newRows.size());
+
+    result.success = true;
+
+    result.message = result.changes.empty()
+        ? "No CSV differences detected."
+        : "CSV comparison completed. Row and cell differences localized.";
+
+    return true;
+}
+
+
+// --------------------------------------------------
+// PART 9: Compare two files
+// --------------------------------------------------
+
 bool FileComparator::compareFiles(
     const std::string& originalPath,
     const std::string& currentPath,
@@ -481,7 +825,6 @@ bool FileComparator::compareFiles(
     if (originalPath.empty() || currentPath.empty()) {
 
         result.message = "Invalid file paths.";
-
         return false;
     }
 
@@ -491,15 +834,52 @@ bool FileComparator::compareFiles(
     if (!fileHandler.readFile(originalPath, originalData)) {
 
         result.message = "Failed to read original file.";
-
         return false;
     }
 
     if (!fileHandler.readFile(currentPath, currentData)) {
 
         result.message = "Failed to read current file.";
+        return false;
+    }
+
+    auto getExtension = [](const std::string& path) {
+
+        const size_t slash = path.find_last_of("/\\\\");
+        const size_t dot = path.find_last_of('.');
+
+        if (dot == std::string::npos ||
+            (slash != std::string::npos && dot < slash)) {
+            return std::string();
+        }
+
+        std::string extension = path.substr(dot + 1);
+
+        std::transform(
+            extension.begin(),
+            extension.end(),
+            extension.begin(),
+            [](unsigned char ch) {
+                return static_cast<char>(std::tolower(ch));
+            }
+        );
+
+        return extension;
+    };
+
+    const std::string originalExtension = getExtension(originalPath);
+    const std::string currentExtension = getExtension(currentPath);
+
+    if (originalExtension != currentExtension) {
+
+        result.message =
+            "File types do not match. Please verify using the same file format.";
 
         return false;
+    }
+
+    if (originalExtension == "csv") {
+        return compareCSV(originalData, currentData, result);
     }
 
     return compareText(

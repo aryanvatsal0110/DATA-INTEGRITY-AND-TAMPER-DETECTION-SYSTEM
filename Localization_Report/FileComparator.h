@@ -1,4 +1,3 @@
-
 #ifndef FILE_COMPARATOR_H
 #define FILE_COMPARATOR_H
 
@@ -7,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstddef>
+#include <utility>
 
 enum class LineChangeType {
     MODIFIED,
@@ -76,6 +76,20 @@ private:
         const std::string& current,
         std::vector<std::string>& removed,
         std::vector<std::string>& added
+    ) const;
+
+    // CSV parser supports quoted fields, escaped quotes,
+    // commas inside quoted fields, and embedded newlines.
+    bool parseCSV(
+        const std::string& content,
+        std::vector<std::vector<std::string>>& rows,
+        std::string& error
+    ) const;
+
+    bool compareCSV(
+        const std::string& original,
+        const std::string& current,
+        FileComparisonResult& result
     ) const;
 
 public:
